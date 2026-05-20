@@ -1,0 +1,91 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "infra: up",
+      "type": "shell",
+      "command": "docker compose -f infra/docker/docker-compose.yml up -d",
+      "problemMatcher": [],
+      "presentation": { "panel": "shared", "reveal": "silent" }
+    },
+    {
+      "label": "infra: down",
+      "type": "shell",
+      "command": "docker compose -f infra/docker/docker-compose.yml down",
+      "problemMatcher": []
+    },
+    {
+      "label": "infra: logs",
+      "type": "shell",
+      "command": "docker compose -f infra/docker/docker-compose.yml logs -f --tail=100",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "pnpm: install",
+      "type": "shell",
+      "command": "pnpm install",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm: lint",
+      "type": "shell",
+      "command": "pnpm lint",
+      "problemMatcher": ["$eslint-stylish"],
+      "group": "test"
+    },
+    {
+      "label": "pnpm: typecheck",
+      "type": "shell",
+      "command": "pnpm typecheck",
+      "problemMatcher": ["$tsc"],
+      "group": "test"
+    },
+    {
+      "label": "pnpm: test",
+      "type": "shell",
+      "command": "pnpm test",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "pnpm: build",
+      "type": "shell",
+      "command": "pnpm build",
+      "problemMatcher": ["$tsc"],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "pnpm: dev (all)",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "prisma: generate",
+      "type": "shell",
+      "command": "pnpm -F @gtarp/db prisma:generate",
+      "problemMatcher": []
+    },
+    {
+      "label": "prisma: migrate dev",
+      "type": "shell",
+      "command": "pnpm -F @gtarp/db prisma:migrate",
+      "problemMatcher": []
+    },
+    {
+      "label": "prisma: studio",
+      "type": "shell",
+      "command": "pnpm -F @gtarp/db prisma:studio",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "ci: full (lint + typecheck + test + build)",
+      "dependsOrder": "sequence",
+      "dependsOn": ["pnpm: lint", "pnpm: typecheck", "pnpm: test", "pnpm: build"],
+      "problemMatcher": []
+    }
+  ]
+}

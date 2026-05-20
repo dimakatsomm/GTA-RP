@@ -1,0 +1,198 @@
+{
+  // Editor
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.rulers": [100],
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  // TypeScript — use workspace version
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+
+  // ESLint flat config
+  "eslint.useFlatConfig": true,
+  "eslint.workingDirectories": [{ "pattern": "apps/*" }, { "pattern": "packages/*" }],
+
+  // Prettier
+  "prettier.requireConfig": true,
+
+  // Per-language
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[yaml]": { "editor.defaultFormatter": "redhat.vscode-yaml" },
+  "[prisma]": { "editor.defaultFormatter": "Prisma.prisma" },
+  "[lua]": { "editor.tabSize": 4 },
+
+  // Prisma
+  "prisma.showPrismaDataPlatformNotification": false,
+
+  // Lua — FiveM globals via cfxlua-vscode + sumneko.lua
+  "Lua.workspace.checkThirdParty": false,
+  "Lua.diagnostics.globals": [
+    "Citizen",
+    "GetResourceState",
+    "exports",
+    "TriggerEvent",
+    "TriggerServerEvent",
+    "TriggerClientEvent",
+    "RegisterNetEvent",
+    "AddEventHandler",
+    "RegisterCommand",
+    "PlayerPedId",
+    "GetPlayerPed",
+    "Wait",
+    "lib",
+    "QBX",
+    "vector3",
+    "vector4"
+  ],
+  "Lua.diagnostics.disable": ["lowercase-global"],
+  "Lua.workspace.library": ["${3rd}/love2d/library"],
+
+  // Files
+  "files.associations": {
+    "*.cfg": "ini",
+    "fxmanifest.lua": "lua",
+    ".env.example": "dotenv"
+  },
+  "files.exclude": {
+    "**/.turbo": true,
+    "**/dist": true,
+    "**/.next": true,
+    "**/node_modules": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.turbo": true,
+    "**/.next": true,
+    "**/coverage": true,
+    "**/pnpm-lock.yaml": true
+  },
+
+  // Spell check — load SA terms so authentic words don't get flagged
+  "cSpell.words": [
+    "amapiano",
+    "Bloemfontein",
+    "Bombela",
+    "Braamfontein",
+    "Chatsworth",
+    "Diepkloof",
+    "Dlamini",
+    "Fordsburg",
+    "gqom",
+    "Gauteng",
+    "gogo",
+    "Gomora",
+    "Gqeberha",
+    "Gugulethu",
+    "Hillbrow",
+    "Khanyisa",
+    "Khayelitsha",
+    "Khumalo",
+    "Kimberley",
+    "Kwazulu",
+    "kwaito",
+    "Lerato",
+    "Mahikeng",
+    "Mahlangu",
+    "Mamelodi",
+    "maskandi",
+    "Mbeki",
+    "Mbombela",
+    "mfowethu",
+    "Mitchells",
+    "Mokoena",
+    "Moodley",
+    "Mthembu",
+    "Mzansi",
+    "Naidoo",
+    "Naledi",
+    "Ndlovu",
+    "Nkosi",
+    "Nomvula",
+    "Palesa",
+    "Pimville",
+    "Polokwane",
+    "Pretoria",
+    "Pretorius",
+    "Refilwe",
+    "Rosebank",
+    "Sandton",
+    "shisa",
+    "Sibanye",
+    "Sipho",
+    "Sithole",
+    "skebenga",
+    "Skomplaas",
+    "Soweto",
+    "Tembisa",
+    "Thabo",
+    "Tshabalala",
+    "Tshepo",
+    "Tshwane",
+    "tsotsi",
+    "tsotsitaal",
+    "Umlazi",
+    "Yeoville",
+    "Zinhle",
+    "zol",
+    "Zulu",
+    "egoli",
+    // tech
+    "fivem",
+    "qbox",
+    "qbcore",
+    "fxmanifest",
+    "nats",
+    "jetstream",
+    "bullmq",
+    "elevenlabs",
+    "fastify",
+    "prisma",
+    "pgvector",
+    "luacheck",
+    "luacheckrc",
+    "txadmin",
+    "ox_lib",
+    "ox_inventory",
+    "gtarp"
+  ],
+
+  // GitHub Copilot — agent mode + custom instructions
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": true,
+    "markdown": true,
+    "yaml": true,
+    "scminput": false
+  },
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "github.copilot.chat.codeGeneration.instructions": [
+    { "file": "AGENTS.md" },
+    { "file": ".github/copilot/AGENTS.md" }
+  ],
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    { "text": "Use Conventional Commits. Subject ≤72 chars. No emojis. Reference milestone tag like (m3) when applicable." }
+  ],
+  "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
+    { "file": ".github/pull_request_template.md" }
+  ],
+  "github.copilot.chat.reviewSelection.instructions": [
+    { "file": "AGENTS.md" }
+  ]
+}
