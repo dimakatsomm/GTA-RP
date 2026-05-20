@@ -1,5 +1,12 @@
 import OpenAI from 'openai';
-import type { TextProvider, VoiceProvider, GenerationRequest, GenerationResult, VoiceRequest, VoiceResult } from '../index.js';
+import type {
+  TextProvider,
+  VoiceProvider,
+  GenerationRequest,
+  GenerationResult,
+  VoiceRequest,
+  VoiceResult,
+} from '../index.js';
 
 const OPENAI_TTS_VOICES = new Set(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']);
 
@@ -99,10 +106,14 @@ export class OpenAIVoiceProvider implements VoiceProvider {
     const arrayBuffer = await response.arrayBuffer();
     const audio = Buffer.from(arrayBuffer);
     const costUsd = (req.text.length / 1000) * 0.015;
+    // Rough estimate matching ElevenLabsVoiceProvider so downstream metrics
+    // (audioSeconds, budget cost normalisation) are usable across providers.
+    // ~15 chars/sec is typical English TTS pacing.
+    const durationSeconds = req.text.length / 15;
 
     return {
       audio,
-      durationSeconds: 0,
+      durationSeconds,
       costUsd,
       cacheHit: false,
     };

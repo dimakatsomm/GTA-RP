@@ -1,17 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { VoiceRequest } from '../index.js';
 
-vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
-  mkdirSync: vi.fn(),
-  readFileSync: vi.fn(),
-  writeFileSync: vi.fn(),
+vi.mock('node:fs/promises', () => ({
+  access: vi.fn(),
+  mkdir: vi.fn(),
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
 }));
 
-const fsMod = await import('node:fs');
-const mockExistsSync = vi.mocked(fsMod.existsSync);
-const mockReadFileSync = vi.mocked(fsMod.readFileSync);
-const mockWriteFileSync = vi.mocked(fsMod.writeFileSync);
+const fsPromisesMod = await import('node:fs/promises');
+const mockAccess = vi.mocked(fsPromisesMod.access);
+const mockMkdir = vi.mocked(fsPromisesMod.mkdir);
+const mockReadFile = vi.mocked(fsPromisesMod.readFile);
+const mockWriteFile = vi.mocked(fsPromisesMod.writeFile);
 
 const { ElevenLabsVoiceProvider } = await import('./elevenlabs.js');
 
@@ -34,9 +35,11 @@ function makeFetchResponse(data: Buffer): Response {
 
 describe('ElevenLabsVoiceProvider', () => {
   beforeEach(() => {
-    mockExistsSync.mockReturnValue(false);
-    mockReadFileSync.mockReturnValue(Buffer.from('cached-audio'));
-    mockWriteFileSync.mockReturnValue(undefined);
+    // Default: cache MISS (access rejects with ENOENT-like).
+    mockAccess.mockRejectedValue(new Error('ENOENT'));
+    mockMkdir.mockResolvedValue(undefined);
+    mockReadFile.mockResolvedValue(Buffer.from('cached-audio'));
+    mockWriteFile.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -47,27 +50,27 @@ describe('ElevenLabsVoiceProvider', () => {
   it('throws if text exceeds 1500 characters', async () => {
     const provider = new ElevenLabsVoiceProvider({ apiKey: 'test-key', cacheDir: '/fake/cache' });
     const longText = 'a'.repeat(1501);
-    await expect(
-      provider.speak({ ...BASE_REQ, text: longText }),
-    ).rejects.toThrow('hard cap');
+    await expect(provider.speak({ ...BASE_REQ, text: longText })).rejects.toThrow('hard cap');
   });
 
-  it('returns cached audio on cache hit', async () => {
+  it('returns cached audio on cache hit and reports zero incremental cost', async () => {
     const cachedBuffer = Buffer.from('mp3-bytes-cached');
-    mockExistsSync.mockReturnValue(true);
-    mockReadFileSync.mockReturnValue(cachedBuffer);
+    mockAccess.mockResolvedValue(undefined);
+    mockReadFile.mockResolvedValue(cachedBuffer);
 
     const provider = new ElevenLabsVoiceProvider({ apiKey: 'test-key', cacheDir: '/fake/cache' });
     const result = await provider.speak(BASE_REQ);
 
     expect(result.cacheHit).toBe(true);
     expect(result.audio).toEqual(cachedBuffer);
-    expect(mockWriteFileSync).not.toHaveBeenCalled();
+    // Cache hit incurs no external API spend — costUsd reflects actual outlay.
+    expect(result.costUsd).toBe(0);
+    expect(mockWriteFile).not.toHaveBeenCalled();
   });
 
   it('calls ElevenLabs API on cache miss and caches result', async () => {
     const audioData = Buffer.from('fresh-mp3-bytes');
-    mockExistsSync.mockReturnValue(false);
+    mockAccess.mockRejectedValue(new Error('ENOENT'));
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeFetchResponse(audioData)));
 
@@ -76,7 +79,7 @@ describe('ElevenLabsVoiceProvider', () => {
 
     expect(result.cacheHit).toBe(false);
     expect(result.audio).toEqual(audioData);
-    expect(mockWriteFileSync).toHaveBeenCalledOnce();
+    expect(mockWriteFile).toHaveBeenCalledOnce();
 
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -88,8 +91,8 @@ describe('ElevenLabsVoiceProvider', () => {
     );
   });
 
-  it('calculates cost correctly', async () => {
-    mockExistsSync.mockReturnValue(false);
+  it('calculates cost correctly on cache miss', async () => {
+    mockAccess.mockRejectedValue(new Error('ENOENT'));
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeFetchResponse(Buffer.from('x'))));
 
     const provider = new ElevenLabsVoiceProvider({ apiKey: 'test-key', cacheDir: '/fake/cache' });

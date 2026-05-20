@@ -11,6 +11,11 @@ export interface L1Cache {
 }
 
 export interface L2Cache {
-  find(userPrompt: string, threshold: number): Promise<CacheEntry | null>;
+  /**
+   * Find a semantically similar cached entry. If `threshold` is omitted the
+   * implementation uses its configured default (e.g. SemanticL2Cache's
+   * deps.threshold).
+   */
+  find(userPrompt: string, threshold?: number): Promise<CacheEntry | null>;
   store(userPrompt: string, entry: CacheEntry): Promise<void>;
 }

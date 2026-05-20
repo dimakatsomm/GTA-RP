@@ -54,7 +54,7 @@ describe('adminRoutes', () => {
     expect(res.headers['content-type']).toContain('text/plain');
     const text = res.body;
     expect(text).toContain('ai_cost_usd_24h 12.5');
-    expect(text).toContain('ai_calls_total{tier="1"} 200');
+    expect(text).toContain('ai_calls_24h{tier="1"} 200');
     expect(text).toContain('ai_cache_hit_rate 0.72');
     expect(text).toContain('# HELP ai_cost_usd_24h');
     await app.close();

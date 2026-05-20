@@ -7,12 +7,12 @@
   "panels": [
     {
       "id": 1,
-      "title": "Cost per Hour by Tier & Purpose",
+      "title": "AI Calls (24h rolling) by Tier",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "rate(ai_calls_total[1h])",
+          "expr": "ai_calls_24h",
           "legendFormat": "tier={{tier}}"
         }
       ],

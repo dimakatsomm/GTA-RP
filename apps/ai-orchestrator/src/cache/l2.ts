@@ -19,21 +19,18 @@ export class SemanticL2Cache implements L2Cache {
   private readonly embedder: EmbeddingClient;
   private readonly threshold: number;
 
-  constructor(deps: {
-    vectorStore: VectorStore;
-    embedder: EmbeddingClient;
-    threshold?: number;
-  }) {
+  constructor(deps: { vectorStore: VectorStore; embedder: EmbeddingClient; threshold?: number }) {
     this.vectorStore = deps.vectorStore;
     this.embedder = deps.embedder;
     this.threshold = deps.threshold ?? DEFAULT_THRESHOLD;
   }
 
-  async find(userPrompt: string, threshold: number): Promise<CacheEntry | null> {
+  async find(userPrompt: string, threshold?: number): Promise<CacheEntry | null> {
+    const effectiveThreshold = threshold ?? this.threshold;
     const embedding = await this.embedder.embed(userPrompt);
-    const result = await this.vectorStore.findSimilar(embedding, threshold);
+    const result = await this.vectorStore.findSimilar(embedding, effectiveThreshold);
     if (result === null) return null;
-    if (result.score >= threshold) return result.entry;
+    if (result.score >= effectiveThreshold) return result.entry;
     return null;
   }
 
@@ -44,7 +41,7 @@ export class SemanticL2Cache implements L2Cache {
 }
 
 export class NoopL2Cache implements L2Cache {
-  async find(_userPrompt: string, _threshold: number): Promise<CacheEntry | null> {
+  async find(_userPrompt: string, _threshold?: number): Promise<CacheEntry | null> {
     return null;
   }
 

@@ -21,10 +21,7 @@ function makeTextProvider(tier: AiTier): TextProvider {
   return { generate: vi.fn(async () => makeResult(tier)) };
 }
 
-function makeBudgetChecker(opts?: {
-  serverOk?: boolean;
-  playerOk?: boolean;
-}): BudgetChecker {
+function makeBudgetChecker(opts?: { serverOk?: boolean; playerOk?: boolean }): BudgetChecker {
   return {
     checkServer: vi.fn(async () => opts?.serverOk ?? true),
     checkPlayer: vi.fn(async () => opts?.playerOk ?? true),
@@ -41,9 +38,7 @@ function makeDeps(
   budgetChecker: BudgetChecker,
   usageLogger: UsageLogger = makeUsageLogger(),
 ): RouterDeps {
-  const textProviders = new Map<AiTier, TextProvider>(
-    tiers.map((t) => [t, makeTextProvider(t)]),
-  );
+  const textProviders = new Map<AiTier, TextProvider>(tiers.map((t) => [t, makeTextProvider(t)]));
   return {
     textProviders,
     voiceProviders: new Map(),
@@ -69,19 +64,17 @@ describe('routeText', () => {
     expect(result.degraded).toBe(false);
   });
 
-  it('degrades to lower tier when server budget exceeded', async () => {
+  it('hard-falls to tier 0 when server budget exceeded', async () => {
     const deps = makeDeps([0, 1, 2, 3], makeBudgetChecker({ serverOk: false, playerOk: true }));
     const result = await routeText(baseReq, undefined, deps);
     expect(result.requestedTier).toBe(2);
-    expect(result.usedTier).toBe(1);
+    // Stepping 2→1 would still spend paid tokens; only tier 0 (templates) is free.
+    expect(result.usedTier).toBe(0);
     expect(result.degraded).toBe(true);
   });
 
   it('degrades further when both server and player budgets exceeded', async () => {
-    const deps = makeDeps(
-      [0, 1, 2, 3],
-      makeBudgetChecker({ serverOk: false, playerOk: false }),
-    );
+    const deps = makeDeps([0, 1, 2, 3], makeBudgetChecker({ serverOk: false, playerOk: false }));
     const result = await routeText(baseReq, 'player-1', deps);
     expect(result.usedTier).toBe(0);
     expect(result.degraded).toBe(true);

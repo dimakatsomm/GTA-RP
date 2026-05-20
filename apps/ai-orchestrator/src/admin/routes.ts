@@ -36,10 +36,13 @@ export async function adminRoutes(app: FastifyInstance, opts: AdminDeps): Promis
       `# HELP ai_cost_usd_24h Total AI cost in USD over last 24 hours`,
       `# TYPE ai_cost_usd_24h gauge`,
       `ai_cost_usd_24h ${summary.totalCostUsd24h}`,
-      `# HELP ai_calls_total Total AI calls by tier`,
-      `# TYPE ai_calls_total counter`,
+      // Emitted from a 24h rolling summary, not a process-lifetime counter,
+      // so this is a gauge — values can fall between scrapes. Use this with
+      // `last_over_time()` / `avg_over_time()` in PromQL, not `rate()`.
+      `# HELP ai_calls_24h Total AI calls by tier over the last 24 hours`,
+      `# TYPE ai_calls_24h gauge`,
       ...Object.entries(summary.callsByTier).map(
-        ([tier, count]) => `ai_calls_total{tier="${tier}"} ${count}`,
+        ([tier, count]) => `ai_calls_24h{tier="${tier}"} ${count}`,
       ),
       `# HELP ai_cache_hit_rate Cache hit rate (0-1)`,
       `# TYPE ai_cache_hit_rate gauge`,

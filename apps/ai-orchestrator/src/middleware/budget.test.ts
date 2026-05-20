@@ -3,10 +3,7 @@ import Fastify from 'fastify';
 import { createBudgetMiddleware } from './budget.js';
 import type { BudgetChecker } from '../router.js';
 
-function makeBudgetChecker(opts?: {
-  serverOk?: boolean;
-  playerOk?: boolean;
-}): BudgetChecker {
+function makeBudgetChecker(opts?: { serverOk?: boolean; playerOk?: boolean }): BudgetChecker {
   return {
     checkServer: vi.fn(async () => opts?.serverOk ?? true),
     checkPlayer: vi.fn(async () => opts?.playerOk ?? true),
@@ -18,13 +15,9 @@ async function buildTestApp(budgetChecker: BudgetChecker, _headers: Record<strin
   const app = Fastify({ logger: false });
   const middleware = createBudgetMiddleware({ budgetChecker });
 
-  app.post(
-    '/test',
-    { preHandler: middleware },
-    async (req, reply) => {
-      return reply.send(req.budgetCtx ?? null);
-    },
-  );
+  app.post('/test', { preHandler: middleware }, async (req, reply) => {
+    return reply.send(req.budgetCtx ?? null);
+  });
 
   await app.ready();
   return app;
@@ -62,7 +55,8 @@ describe('createBudgetMiddleware', () => {
     });
 
     const body = res.json<{ effectiveTier: number; degraded: boolean }>();
-    expect(body.effectiveTier).toBe(1);
+    // Hard-fallback to tier 0 on budget exceed — stepping 2→1 still spends paid tokens.
+    expect(body.effectiveTier).toBe(0);
     expect(body.degraded).toBe(true);
     await app.close();
   });
