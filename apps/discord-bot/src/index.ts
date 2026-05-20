@@ -19,7 +19,9 @@ client.once('ready', (c) => {
 client.on('interactionCreate', (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName === 'ping') {
-    void pingHandler(interaction);
+    pingHandler(interaction).catch((err: unknown) => {
+      console.error('[discord-bot] ping handler error:', err);
+    });
   }
 });
 

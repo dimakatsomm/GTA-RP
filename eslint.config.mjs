@@ -16,7 +16,6 @@ export default [
       },
       globals: {
         ...globals.node,
-        ...globals.browser,
       },
     },
     plugins: {
@@ -29,6 +28,14 @@ export default [
       // TypeScript handles redeclaration across value/type namespaces correctly;
       // the base rule produces false positives on `export type X = z.infer<typeof X>`.
       'no-redeclare': 'off',
+    },
+  },
+  {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
     },
   },
   {

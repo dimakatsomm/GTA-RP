@@ -46,7 +46,7 @@ async function main() {
 
   // ── HTTP /healthz ─────────────────────────────────────────────────────────
   const app = Fastify({ logger: false });
-  void app.register(healthzPlugin);
+  await app.register(healthzPlugin);
   await app.listen({ port: PORT, host: '0.0.0.0' });
   console.log(`[event-worker] /healthz listening on port ${PORT}`);
 

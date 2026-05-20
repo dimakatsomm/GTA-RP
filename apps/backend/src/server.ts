@@ -1,8 +1,8 @@
 import Fastify from 'fastify';
 import { healthzRoute } from './routes/healthz.js';
 
-export function buildServer() {
+export async function buildServer() {
   const app = Fastify({ logger: true });
-  void app.register(healthzRoute);
+  await app.register(healthzRoute);
   return app;
 }
