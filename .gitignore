@@ -1,0 +1,33 @@
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editors
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# prisma
+*.db
+*.db-journal
+
+# fivem
+apps/fivem-resources/cache/
+apps/fivem-resources/server-data/

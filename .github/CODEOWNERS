@@ -1,0 +1,18 @@
+# Default owners — every PR needs at least one of these reviewers.
+*                                @gtarp/core
+
+# Schemas are load-bearing — separate reviewer set.
+/packages/event-schema/          @gtarp/core @gtarp/architecture
+/packages/db/prisma/             @gtarp/core @gtarp/architecture
+
+# AI cost rules — orchestrator owners gate all new AI calls.
+/packages/ai-clients/            @gtarp/ai
+/apps/ai-orchestrator/           @gtarp/ai
+
+# SA content — lore steward must approve.
+/packages/sa-content/            @gtarp/lore
+/docs/lore-bible.md              @gtarp/lore
+
+# Infra / CI — ops owners only.
+/.github/                        @gtarp/ops
+/infra/                          @gtarp/ops
