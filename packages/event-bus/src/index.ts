@@ -87,7 +87,10 @@ export async function connect(opts?: { servers?: string | string[] }): Promise<E
       copts.ackWait(30_000); // 30s in millis
       copts.filterSubject(subjectPattern);
       copts.manualAck();
-      copts.bindStream(STREAM_NAME);
+      // NOTE: do not call bindStream() — it requires the consumer to already
+      // exist with a deliver_subject, causing "push consumer requires deliver_subject".
+      // Let nats.js discover the stream from the subject pattern and auto-create
+      // the push consumer with a generated inbox.
 
       if (deliverPolicy === DeliverPolicy.All) {
         copts.deliverAll();
