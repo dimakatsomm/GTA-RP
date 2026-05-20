@@ -6,13 +6,14 @@
  *   → BullMQ bridge dedup → reputation queue → Reputation row updated
  *
  * Skipped automatically when DATABASE_URL or NATS_URL is absent so the suite
- * runs in environments without infra (e.g. pure unit-test runs).
- *
- * Requires: Postgres, Redis, NATS (with JetStream) all reachable.
+ * runs in environments without infra (e.g. pure unit-test runs). REDIS_URL
+ * still defaults to localhost — the test will fail loudly if Redis is missing
+ * rather than skip, since by the time DATABASE_URL + NATS_URL are present, a
+ * working Redis is a reasonable expectation.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getPrisma } from '@gtarp/db';
-import { connect as connectBus } from '@gtarp/event-bus';
+import { connect as connectBus, type EventBus } from '@gtarp/event-bus';
 import { Redis } from 'ioredis';
 import type { FastifyInstance } from 'fastify';
 import type { DomainEvent } from '@gtarp/event-schema';
@@ -25,14 +26,21 @@ import { registerReputationEngine } from './engines/reputation/index.js';
 type BuildServerFn = typeof import('@gtarp/backend/server').buildServer;
 
 const DB_URL = process.env['DATABASE_URL'];
-const NATS_URL = process.env['NATS_URL'] ?? 'nats://localhost:4222';
+const NATS_URL_RAW = process.env['NATS_URL'];
+const NATS_URL = NATS_URL_RAW ?? 'nats://localhost:4222';
 const REDIS_URL = process.env['REDIS_URL'] ?? 'redis://localhost:6379';
-const skip = !DB_URL;
+// Require both DATABASE_URL and NATS_URL to be explicit before opting in — the
+// docstring's contract. Defaulting NATS_URL would silently run the test in
+// any env that happens to set DATABASE_URL.
+const skip = !DB_URL || !NATS_URL_RAW;
 
 describe.skipIf(skip)('M1 cross-cutting E2E', () => {
   let app: FastifyInstance;
   let bridge: Awaited<ReturnType<typeof startBridge>>;
-  let redis: Redis;
+  let bridgeRedis: Redis;
+  let eventBus: EventBus;
+  let serverRedis: Redis;
+  let savedIngestToken: string | undefined;
 
   // Stable test fixtures. Player/Gang IDs are not validated by the DomainEvent
   // schema (z.string()), but event id + crimeId go through z.uuid() so they
@@ -44,9 +52,13 @@ describe.skipIf(skip)('M1 cross-cutting E2E', () => {
   const INGEST_TOKEN = 'e2e-test-token';
 
   beforeAll(async () => {
+    // Save prior env so we don't pollute peer suites running in the same proc.
+    savedIngestToken = process.env['FIVEM_INGEST_TOKEN'];
     process.env['FIVEM_INGEST_TOKEN'] = INGEST_TOKEN;
 
     // ── DB fixtures ──────────────────────────────────────────────────────────
+    // Use the singleton getPrisma() across the suite. Do NOT $disconnect mid-
+    // setup — the same instance is shared with the running backend below.
     const prisma = getPrisma();
     await prisma.player.upsert({
       where: { fivemLicense: 'seed_e2e_player' },
@@ -89,33 +101,34 @@ describe.skipIf(skip)('M1 cross-cutting E2E', () => {
       },
     });
     await prisma.eventLog.deleteMany({ where: { id: E2E_EVENT_ID } });
-    await prisma.$disconnect();
 
     // ── Start engine + bridge ────────────────────────────────────────────────
     registerReputationEngine();
-    redis = new Redis(REDIS_URL, { maxRetriesPerRequest: null });
+    bridgeRedis = new Redis(REDIS_URL, { maxRetriesPerRequest: null });
     bridge = await startBridge({ natsUrl: NATS_URL, redisUrl: REDIS_URL });
 
     // Clear any stale dedup key from a previous run.
-    await redis.del(`event:${E2E_EVENT_ID}`);
+    await bridgeRedis.del(`event:${E2E_EVENT_ID}`);
 
     // ── Start backend server ─────────────────────────────────────────────────
     const { buildServer } = (await import('@gtarp/backend/server')) as {
       buildServer: BuildServerFn;
     };
-    const eventBus = await connectBus({ servers: NATS_URL });
-    const serverRedis = new Redis(REDIS_URL);
-    const prismaForServer = getPrisma();
-    app = await buildServer({ prisma: prismaForServer, eventBus, redis: serverRedis });
+    eventBus = await connectBus({ servers: NATS_URL });
+    serverRedis = new Redis(REDIS_URL);
+    app = await buildServer({ prisma, eventBus, redis: serverRedis });
     await app.ready();
   }, 60_000);
 
   afterAll(async () => {
+    // Order matters: stop accepting requests → drain bridge → close infra
+    // clients → cleanup DB fixtures → disconnect Prisma singleton last.
     await app?.close();
     await bridge?.close();
-    redis?.disconnect();
+    await eventBus?.close();
+    bridgeRedis?.disconnect();
+    serverRedis?.disconnect();
 
-    // Cleanup DB fixtures.
     const prisma = getPrisma();
     await prisma.reputation.deleteMany({
       where: {
@@ -129,6 +142,13 @@ describe.skipIf(skip)('M1 cross-cutting E2E', () => {
     await prisma.gang.deleteMany({ where: { id: E2E_GANG_ID } });
     await prisma.player.deleteMany({ where: { id: E2E_PLAYER_ID } });
     await prisma.$disconnect();
+
+    // Restore env.
+    if (savedIngestToken === undefined) {
+      delete process.env['FIVEM_INGEST_TOKEN'];
+    } else {
+      process.env['FIVEM_INGEST_TOKEN'] = savedIngestToken;
+    }
   });
 
   it('POST crime.committed → EventLog row → NATS → reputation queue → Reputation rows within 2s', async () => {
@@ -188,7 +208,6 @@ describe.skipIf(skip)('M1 cross-cutting E2E', () => {
       if (perpRep && gangRep) break;
       await new Promise((r) => setTimeout(r, 100));
     }
-    await prisma.$disconnect();
 
     // perp +25, gang +10 per spec.
     expect(perpRep?.score).toBe(25);
