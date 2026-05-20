@@ -1,28 +1,25 @@
 {
-  "name": "@gtarp/event-schema",
+  "name": "@gtarp/discord-bot",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx watch src/index.ts",
     "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
-    "@gtarp/shared-types": "workspace:*",
-    "zod": "^4.4.3"
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
+    "@types/node": "^22.10.0",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.2",
     "typescript": "^6.0.3",
     "vitest": "^2.1.5"
   }
