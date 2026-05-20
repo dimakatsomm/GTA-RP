@@ -5,37 +5,29 @@ import { registerConsumer, type ConsumerRegistration } from '../../bridge/regist
 import { scoreEvent, type ReputationDelta } from './scoring.js';
 
 /**
- * Upserts a single reputation delta row.
- * Lookup key: (playerId, gangId, familyId, area, axis) — all nullable.
- * Uses findFirst + update/create to avoid requiring a compound unique index.
+ * Atomic upsert of a single reputation delta.
+ *
+ * Backed by the `Reputation_target_axis_uniq` composite unique index
+ * (NULLS NOT DISTINCT) created in 20260521000000_reputation_add_axis.
+ * `INSERT … ON CONFLICT DO UPDATE` is atomic, so concurrent workers writing
+ * to the same target+axis tuple cannot create duplicate rows.
  */
 async function applyDelta(prisma: PrismaClient, delta: ReputationDelta): Promise<void> {
-  const where = {
-    playerId: delta.playerId ?? null,
-    gangId: delta.gangId ?? null,
-    familyId: delta.familyId ?? null,
-    area: delta.area ?? null,
-    axis: delta.axis ?? null,
-  };
+  const playerId = delta.playerId ?? null;
+  const gangId = delta.gangId ?? null;
+  const familyId = delta.familyId ?? null;
+  const area = delta.area ?? null;
+  const businessId = delta.businessId ?? null;
+  const axis = delta.axis ?? null;
 
-  const existing = await prisma.reputation.findFirst({ where });
-  if (existing) {
-    await prisma.reputation.update({
-      where: { id: existing.id },
-      data: { score: { increment: delta.delta } },
-    });
-  } else {
-    await prisma.reputation.create({
-      data: {
-        playerId: delta.playerId ?? null,
-        gangId: delta.gangId ?? null,
-        familyId: delta.familyId ?? null,
-        area: delta.area ?? null,
-        axis: delta.axis ?? null,
-        score: delta.delta,
-      },
-    });
-  }
+  await prisma.$executeRaw`
+    INSERT INTO "Reputation" ("id", "playerId", "gangId", "familyId", "area", "businessId", "axis", "score", "updatedAt")
+    VALUES (gen_random_uuid(), ${playerId}, ${gangId}, ${familyId}, ${area}, ${businessId}, ${axis}, ${delta.delta}, NOW())
+    ON CONFLICT ("playerId", "gangId", "familyId", "area", "businessId", "axis")
+    DO UPDATE SET
+      "score" = "Reputation"."score" + EXCLUDED."score",
+      "updatedAt" = NOW()
+  `;
 }
 
 /**
@@ -76,8 +68,13 @@ export async function applyReputationDeltas(
     }
   }
 
-  const allDeltas = [...baseDeltas, ...extraDeltas];
-  await Promise.all(allDeltas.map((d) => applyDelta(prisma, d)));
+  // Apply sequentially: parallel writes to the same (target, axis) conflict
+  // slot from one event would still resolve correctly thanks to the unique
+  // index, but serial keeps the on-conflict path quiet and ordering
+  // deterministic for test assertions. N per event is small.
+  for (const d of [...baseDeltas, ...extraDeltas]) {
+    await applyDelta(prisma, d);
+  }
 }
 
 export const reputationConsumer: ConsumerRegistration = {

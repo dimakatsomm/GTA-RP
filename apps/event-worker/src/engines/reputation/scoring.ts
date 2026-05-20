@@ -5,7 +5,10 @@ export interface ReputationDelta {
   playerId?: string;
   gangId?: string;
   familyId?: string;
+  /** Geographic area (e.g. 'Sandton'). Distinct from businessId. */
   area?: string;
+  /** Business entity id (kept separate from area to avoid collision). */
+  businessId?: string;
   /** Optional scoring axis (e.g. 'criminal', 'safety', 'corruption', 'integrity', 'stability'). */
   axis?: string;
   /** Amount to add to the current score (may be negative). */
@@ -55,7 +58,7 @@ export function scoreEvent(event: DomainEvent): ReputationDelta[] {
     case 'business.robbed':
       // Business stability hit. Perp notoriety requires crimeId→CrimePerpetrator
       // lookup — handled in engine.
-      return [{ area: event.data.businessId, axis: 'stability', delta: -10 }];
+      return [{ businessId: event.data.businessId, axis: 'stability', delta: -10 }];
 
     default:
       return [];

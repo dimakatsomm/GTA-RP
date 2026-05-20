@@ -165,10 +165,10 @@ describe('scoreEvent — business.robbed', () => {
     };
   }
 
-  it('always returns -10 stability for business', () => {
+  it('always returns -10 stability for business (keyed by businessId, not area)', () => {
     const deltas = scoreEvent(robbedEvent(0));
     expect(deltas).toContainEqual<ReputationDelta>({
-      area: 'biz-001',
+      businessId: 'biz-001',
       axis: 'stability',
       delta: -10,
     });

@@ -88,7 +88,7 @@ describe.skipIf(skip)('reputation engine — integration', () => {
           { playerId: TEST_OFFICER_ID },
           { gangId: TEST_GANG_ID },
           { area: 'Sandton' },
-          { area: '__biz_test__' },
+          { businessId: '__biz_test__' },
         ],
       },
     });
@@ -103,7 +103,7 @@ describe.skipIf(skip)('reputation engine — integration', () => {
           { playerId: TEST_OFFICER_ID },
           { gangId: TEST_GANG_ID },
           { area: 'Sandton' },
-          { area: '__biz_test__' },
+          { businessId: '__biz_test__' },
         ],
       },
     });
@@ -157,7 +157,7 @@ describe.skipIf(skip)('reputation engine — integration', () => {
     expect(safetyArea?.score).toBe(-5);
   });
 
-  it('crime.committed serious — idempotent (same event applied twice = same scores)', async () => {
+  it('crime.committed serious — additive (same event applied twice doubles the score)', async () => {
     // Scores were set in previous test. Apply the same event again.
     const event: DomainEvent = {
       ...TEST_EVT_BASE,
@@ -224,7 +224,7 @@ describe.skipIf(skip)('reputation engine — integration', () => {
     await applyReputationDeltas(prisma, event);
 
     const bizStability = await prisma.reputation.findFirst({
-      where: { area: '__biz_test__', axis: 'stability' },
+      where: { businessId: '__biz_test__', axis: 'stability' },
     });
     expect(bizStability?.score).toBe(-10);
 

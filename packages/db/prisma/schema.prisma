@@ -331,21 +331,26 @@ model Rumor {
 }
 
 model Reputation {
-  id        String   @id @default(uuid())
-  playerId  String?
-  familyId  String?
-  gangId    String?
-  area      String?
-  axis      String?  // scoring axis e.g. 'criminal', 'safety', 'corruption', 'integrity', 'stability'
-  score     Float    @default(0)
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  playerId   String?
+  familyId   String?
+  gangId     String?
+  area       String?  // geographic area
+  businessId String?  // business entity id, kept distinct from `area`
+  axis       String?  // scoring axis e.g. 'criminal', 'safety', 'corruption', 'integrity', 'stability'
+  score      Float    @default(0)
+  updatedAt  DateTime @updatedAt
 
-  player    Player?  @relation(fields: [playerId], references: [id])
+  player     Player?  @relation(fields: [playerId], references: [id])
   @@index([playerId])
   @@index([familyId])
   @@index([gangId])
   @@index([area])
+  @@index([businessId])
   @@index([axis])
+  // Composite unique index (NULLS NOT DISTINCT) is created in the
+  // 20260521000000_reputation_add_axis migration via raw SQL — Prisma's
+  // @@unique attribute does not support NULLS NOT DISTINCT in Prisma 7.x.
 }
 
 // ============ Event sourcing / AI usage ============
