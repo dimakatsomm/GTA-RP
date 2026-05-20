@@ -36,3 +36,6 @@ Thumbs.db
 # fivem
 apps/fivem-resources/cache/
 apps/fivem-resources/server-data/
+
+#claude
+.claude/
