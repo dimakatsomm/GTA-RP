@@ -33,15 +33,25 @@ export function getConsumersForSubject(subject: string): ConsumerRegistration[] 
   );
 }
 
-/** Simple NATS wildcard matching: `>` matches everything, `*` matches one token. */
+/**
+ * NATS-style wildcard matching.
+ *  - `*`  matches exactly one token
+ *  - `>`  must be the final token and matches one OR MORE remaining tokens
+ *         (so `gtarp.>` does NOT match the bare subject `gtarp`)
+ */
 function subjectMatches(pattern: string, subject: string): boolean {
   if (pattern === subject) return true;
   const patParts = pattern.split('.');
   const subParts = subject.split('.');
   for (let i = 0; i < patParts.length; i++) {
-    if (patParts[i] === '>') return true;
-    if (patParts[i] === '*') continue;
-    if (patParts[i] !== subParts[i]) return false;
+    const p = patParts[i];
+    if (p === '>') {
+      // `>` is only legal as the final token and must match at least one token.
+      return i === patParts.length - 1 && subParts.length > i;
+    }
+    if (i >= subParts.length) return false;
+    if (p === '*') continue;
+    if (p !== subParts[i]) return false;
   }
   return patParts.length === subParts.length;
 }

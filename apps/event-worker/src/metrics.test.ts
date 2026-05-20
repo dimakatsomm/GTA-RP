@@ -21,6 +21,6 @@ describe('metrics registry', () => {
 
   it('exposes content-type application/openmetrics-text or text/plain', async () => {
     const contentType = registry.contentType;
-    expect(contentType).toMatch(/text\/plain/);
+    expect(contentType).toMatch(/text\/plain|application\/openmetrics-text/);
   });
 });
