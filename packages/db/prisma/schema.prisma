@@ -217,6 +217,8 @@ model Warrant {
 
   crime     Crime    @relation(fields: [crimeId], references: [id])
   subject   Player   @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  @@index([subjectId])
+  @@index([crimeId])
 }
 
 model Arrest {

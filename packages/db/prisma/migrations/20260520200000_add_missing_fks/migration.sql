@@ -9,3 +9,9 @@ ALTER TABLE "Reputation" ADD CONSTRAINT "Reputation_familyId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "Reputation" ADD CONSTRAINT "Reputation_gangId_fkey" FOREIGN KEY ("gangId") REFERENCES "Gang"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- CreateIndex
+CREATE INDEX "Warrant_subjectId_idx" ON "Warrant"("subjectId");
+
+-- CreateIndex
+CREATE INDEX "Warrant_crimeId_idx" ON "Warrant"("crimeId");
