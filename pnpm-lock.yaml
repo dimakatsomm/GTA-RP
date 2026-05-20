@@ -241,6 +241,31 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/event-bus:
+    dependencies:
+      '@gtarp/event-schema':
+        specifier: workspace:*
+        version: link:../event-schema
+      nats:
+        specifier: ^2.29.2
+        version: 2.29.3
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.1.3
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^2.1.5
+        version: 2.1.9(@types/node@22.19.19)
+
   packages/event-schema:
     dependencies:
       '@gtarp/shared-types':
