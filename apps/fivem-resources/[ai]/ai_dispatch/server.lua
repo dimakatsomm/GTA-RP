@@ -91,6 +91,9 @@ local function broadcastDispatch(payload)
   elseif not hasPolice then
     print('[ai_dispatch] no police on duty — incident delivery skipped (set AI_DISPATCH_ALLOW_GLOBAL_FALLBACK=true for solo testing)')
   end
+
+  -- Forward incident to MDT resource so it populates the terminal list
+  TriggerEvent('mdt:newIncident', payload)
 end
 
 -- WebSocket connection to backend.

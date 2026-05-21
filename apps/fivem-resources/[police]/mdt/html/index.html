@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MDT — Mzansi Underworld RP</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="hidden">
+    <div id="mdt-overlay">
+      <!-- Header -->
+      <header id="mdt-header">
+        <span class="mdt-logo">SAPD MDT</span>
+        <span id="mdt-subtitle">Mobile Data Terminal</span>
+        <button id="mdt-close" aria-label="Close MDT">✕</button>
+      </header>
+
+      <!-- Main layout -->
+      <div id="mdt-body">
+        <!-- Incident list -->
+        <aside id="incident-sidebar">
+          <h2>Active Incidents</h2>
+          <ul id="incident-list">
+            <li class="empty-state">No incidents on record.</li>
+          </ul>
+        </aside>
+
+        <!-- Detail panel -->
+        <main id="incident-detail" class="placeholder">
+          <p>Select an incident from the list.</p>
+        </main>
+      </div>
+    </div>
+
+    <!-- Hidden audio element for replay -->
+    <audio id="mdt-audio" preload="none"></audio>
+
+    <script src="app.js"></script>
+  </body>
+</html>
