@@ -62,10 +62,38 @@ function renderIncident(msg) {
 
   show();
 
-  // Prefetch + play synthesized voice if provided
+  // Prefetch + play synthesized voice if provided. Without a voiceUrl we
+  // must still stop any in-flight playback from a previous incident so the
+  // old audio doesn't bleed onto the new card.
   if (msg.voiceUrl) {
     playVoice(msg.voiceUrl);
+  } else {
+    stopVoice();
   }
+}
+
+// Tracks the canplay listener for the current playVoice() invocation so it
+// can be cleaned up on error or when a new incident arrives.
+let currentCanPlay = null;
+
+function detachCanPlay() {
+  if (currentCanPlay) {
+    audio.removeEventListener('canplay', currentCanPlay);
+    currentCanPlay = null;
+  }
+}
+
+function stopVoice() {
+  detachCanPlay();
+  audio.onerror = null;
+  try {
+    audio.pause();
+  } catch {
+    /* paused already */
+  }
+  if (audio.currentTime) audio.currentTime = 0;
+  audio.removeAttribute('src');
+  audio.load();
 }
 
 /**
@@ -73,23 +101,28 @@ function renderIncident(msg) {
  * @param {string} url
  */
 function playVoice(url) {
+  // Always tear down any pending canplay from a previous incident before
+  // wiring up the new one — otherwise failed loads stack listeners and
+  // trigger duplicate play() calls later.
+  detachCanPlay();
   audio.pause();
   audio.src = url;
   audio.volume = 0.85;
 
-  // Attempt eager load; play on canplay
   const onCanPlay = () => {
-    audio.removeEventListener('canplay', onCanPlay);
+    detachCanPlay();
     audio.play().catch(() => {
       /* autoplay blocked — silently skip */
     });
   };
-
+  currentCanPlay = onCanPlay;
   audio.addEventListener('canplay', onCanPlay);
 
   audio.onerror = () => {
     console.warn('[ai_dispatch] voice audio failed to load:', url);
-    audio.src = '';
+    detachCanPlay();
+    audio.onerror = null;
+    audio.removeAttribute('src');
   };
 
   audio.load();

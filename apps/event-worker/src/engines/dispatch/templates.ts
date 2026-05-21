@@ -86,11 +86,16 @@ export function buildTier0Summary(event: CrimeCommitted): string | null {
   // Apply placeholder substitutions using seeded RNG for determinism
   const casual = SLANG.filter((s) => s.register === 'casual');
   const street = SLANG.filter((s) => s.register === 'street');
+  const tsotsitaal = SLANG.filter((s) => s.register === 'tsotsitaal');
+  // Fall back to the full SLANG list if a register happens to be empty so
+  // pickFrom() never sees a zero-length array.
+  const safe = <T>(arr: readonly T[], fallback: readonly T[]): readonly T[] =>
+    arr.length > 0 ? arr : fallback;
 
   return raw
-    .replace(/\{\{slang\.casual\}\}/g, () => pickFrom(casual, rng).term)
-    .replace(/\{\{slang\.street\}\}/g, () => pickFrom(street, rng).term)
-    .replace(/\{\{slang\.tsotsitaal\}\}/g, () => pickFrom(SLANG, rng).term)
+    .replace(/\{\{slang\.casual\}\}/g, () => pickFrom(safe(casual, SLANG), rng).term)
+    .replace(/\{\{slang\.street\}\}/g, () => pickFrom(safe(street, SLANG), rng).term)
+    .replace(/\{\{slang\.tsotsitaal\}\}/g, () => pickFrom(safe(tsotsitaal, SLANG), rng).term)
     .replace(/\{\{name\.given\.m\}\}/g, () => pickFrom(FIRST_NAMES.m, rng))
     .replace(/\{\{name\.given\.f\}\}/g, () => pickFrom(FIRST_NAMES.f, rng))
     .replace(/\{\{name\.surname\}\}/g, () => pickFrom(SURNAMES, rng))

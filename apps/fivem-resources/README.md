@@ -25,7 +25,7 @@ The txAdmin UI is at http://localhost:40120. First run prompts for a PIN.
 
 ## Resource layout
 
-```
+```text
 [crime]/
   robbery/       — Holdup at convenience store till → crime.committed event
 [ai]/

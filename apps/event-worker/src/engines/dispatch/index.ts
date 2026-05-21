@@ -68,33 +68,35 @@ async function handleCrimeCommitted(event: CrimeCommitted): Promise<void> {
     return;
   }
 
-  // 1 — Generate (or retrieve cached) summary
-  const {
-    summary,
-    tier,
-    cached: summaryCached,
-  } = await generateDispatchSummary(event, redis, orchestratorUrl);
-  console.log(`[dispatch] summary tier=${tier} cached=${summaryCached} crimeId=${crimeId}`);
-
-  // 2 — Voice synthesis via ai-orchestrator (Tier 1 via ElevenLabs, budget-guarded).
-  //     Cache key includes crimeId so retries hit. Gracefully skip on failure.
-  let voiceUrl: string | undefined;
-  const voiceKey = voiceCacheKey(crimeId);
-
-  const cachedVoice = await redis.get(voiceKey);
-  if (cachedVoice) {
-    voiceUrl = cachedVoice;
-  } else {
-    voiceUrl = await requestVoiceSynth(summary, crimeId, orchestratorUrl);
-    if (voiceUrl) {
-      await redis.set(voiceKey, voiceUrl, 'EX', VOICE_CACHE_TTL_SEC);
-    }
-  }
-
-  // 3 — Publish dispatch.requested on the shared bus connection.
-  // Claim already written above; align its TTL with the summary cache if
-  // available so they expire together.
+  // Wrap ALL post-claim work in try/catch so the claim is released on any
+  // failure (summary generation, voice synth, bus publish). Otherwise a
+  // transient failure would lock the crimeId out of retry for the full TTL.
+  let publishedOk = false;
   try {
+    // 1 — Generate (or retrieve cached) summary
+    const {
+      summary,
+      tier,
+      cached: summaryCached,
+    } = await generateDispatchSummary(event, redis, orchestratorUrl);
+    console.log(`[dispatch] summary tier=${tier} cached=${summaryCached} crimeId=${crimeId}`);
+
+    // 2 — Voice synthesis via ai-orchestrator (Tier 1 via ElevenLabs, budget-guarded).
+    //     Cache key includes crimeId so retries hit. Gracefully skip on failure.
+    let voiceUrl: string | undefined;
+    const voiceKey = voiceCacheKey(crimeId);
+
+    const cachedVoice = await redis.get(voiceKey);
+    if (cachedVoice) {
+      voiceUrl = cachedVoice;
+    } else {
+      voiceUrl = await requestVoiceSynth(summary, crimeId, orchestratorUrl);
+      if (voiceUrl) {
+        await redis.set(voiceKey, voiceUrl, 'EX', VOICE_CACHE_TTL_SEC);
+      }
+    }
+
+    // 3 — Publish dispatch.requested on the shared bus connection.
     await bus.publish({
       id: randomUUID(),
       type: 'dispatch.requested',
@@ -109,20 +111,25 @@ async function handleCrimeCommitted(event: CrimeCommitted): Promise<void> {
         ...(voiceUrl ? { voiceUrl } : {}),
       },
     });
-  } catch (err) {
-    // Publish failed — release the claim so a retry can succeed.
-    await redis.del(incidentKey(crimeId));
-    throw err;
-  }
+    publishedOk = true;
 
-  const summaryTtl = await redis.ttl(dispatchCacheKey(crimeId));
-  if (summaryTtl > 0 && summaryTtl !== INCIDENT_CLAIM_TTL_SEC) {
-    await redis.expire(incidentKey(crimeId), summaryTtl);
-  }
+    // 4 — Align claim TTL with summary cache so they expire together.
+    const summaryTtl = await redis.ttl(dispatchCacheKey(crimeId));
+    if (summaryTtl > 0 && summaryTtl !== INCIDENT_CLAIM_TTL_SEC) {
+      await redis.expire(incidentKey(crimeId), summaryTtl);
+    }
 
-  console.log(
-    `[dispatch] published dispatch.requested incidentId=${incidentId} crimeId=${crimeId}`,
-  );
+    console.log(
+      `[dispatch] published dispatch.requested incidentId=${incidentId} crimeId=${crimeId}`,
+    );
+  } finally {
+    if (!publishedOk) {
+      // Best-effort release of the atomic claim — a retry can then succeed.
+      await redis.del(incidentKey(crimeId)).catch(() => {
+        /* best-effort */
+      });
+    }
+  }
 }
 
 async function requestVoiceSynth(

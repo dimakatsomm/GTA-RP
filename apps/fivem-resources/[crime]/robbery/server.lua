@@ -49,6 +49,16 @@ local function checkCooldown(playerId)
   return true
 end
 
+--- Server-authoritative store-zone registry. Keys MUST match the `area` field
+--- sent from client.lua's STORE_ZONES. Values are the canonical till coords +
+--- the max distance (metres) the player may be from those coords when the
+--- holdup is triggered. A modified client cannot invent areas or fire
+--- robberies from outside a real till — both checks happen server-side here.
+local SERVER_STORE_ZONES = {
+  yeoville = { coords = vector3(372.3, 328.6, 103.6), radius = 5.0 },
+  hillbrow = { coords = vector3(138.0, -1006.4, 29.3), radius = 5.0 },
+}
+
 --- Province lookup by in-world area (all GP for Joburg/eGoli analogue)
 local AREA_PROVINCE = {
   yeoville    = 'GP',
@@ -128,6 +138,14 @@ RegisterNetEvent('robbery:requestHoldup', function(data)
     return
   end
 
+  -- Server-side area allowlist: only known store zones can ever produce a
+  -- crime.committed. A modified client cannot invent a new `area`.
+  local zone = SERVER_STORE_ZONES[data.area]
+  if not zone then
+    print(('[robbery] rejected player %d — unknown area "%s"'):format(playerId, tostring(data.area)))
+    return
+  end
+
   -- Cooldown guard
   if not checkCooldown(playerId) then
     TriggerClientEvent('ox_lib:notify', playerId, {
@@ -137,12 +155,23 @@ RegisterNetEvent('robbery:requestHoldup', function(data)
     return
   end
 
-  -- Confirm player is on foot and in approximate range (anti-cheat lite)
-  local ped    = GetPlayerPed(playerId)
-  local coords = GetEntityCoords(ped)
-  local dist   = #(coords - vector3(data.x, data.y, data.z))
-  if dist > 10.0 then
-    print(('[robbery] player %d coords mismatch (dist=%.1f) — possible cheat'):format(playerId, dist))
+  -- Two distance checks anchored to the server's canonical till coords:
+  -- (1) the player ped must be within `radius` metres of the till, and
+  -- (2) the coords the client reported must also be within that radius.
+  -- Either check failing means the client lied about position or area.
+  local ped       = GetPlayerPed(playerId)
+  local pedCoords = GetEntityCoords(ped)
+  local pedDist   = #(pedCoords - zone.coords)
+  if pedDist > zone.radius then
+    print(('[robbery] player %d not at %s till (pedDist=%.1f, max=%.1f)'):format(
+      playerId, data.area, pedDist, zone.radius))
+    return
+  end
+
+  local reportedDist = #(vector3(data.x, data.y, data.z) - zone.coords)
+  if reportedDist > zone.radius then
+    print(('[robbery] player %d reported coords outside %s till (reportedDist=%.1f)'):format(
+      playerId, data.area, reportedDist))
     return
   end
 

@@ -20,9 +20,17 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
 
   await app.register(healthzRoute);
 
-  if (opts.prisma && opts.eventBus && opts.redis) {
+  // Rate limiter needs Redis. Events ingest needs Prisma + EventBus. WebSocket
+  // dispatch fan-out only needs EventBus and should not be gated on Prisma/Redis
+  // — gating it together meant /ws/fivem was silently disabled in eventBus-only
+  // deployments (e.g. read-only replicas, integration test harnesses).
+  if (opts.redis) {
     await app.register(rateLimit, { global: false, redis: opts.redis });
+  }
+  if (opts.prisma && opts.eventBus) {
     await app.register(eventsRoute, { prisma: opts.prisma, eventBus: opts.eventBus });
+  }
+  if (opts.eventBus) {
     await app.register(websocket);
     await app.register(wsRoute, { eventBus: opts.eventBus });
   }

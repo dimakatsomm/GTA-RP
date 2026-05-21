@@ -30,7 +30,7 @@ triggers the dispatch audio loop — the highest-clip-yield surface of M3.
 
 Check backend logs for:
 
-```
+```text
 [events] crime.committed crimeId=<uuid> published seq=<n>
 ```
 
@@ -40,7 +40,7 @@ Check NATS monitor at http://localhost:8222/jsz for message on `gtarp.crime.comm
 
 Check event-worker logs for:
 
-```
+```text
 [dispatch] summary tier=0 cached=false crimeId=<uuid>
 [dispatch] published dispatch.requested incidentId=<uuid> crimeId=<uuid>
 ```

@@ -175,6 +175,8 @@ export const VEHICLE_COLORS = [
   'blue',
   'blou',
   'grey',
+  'grys',
+  'green',
   'groen',
   'dark green',
   'dark blue',

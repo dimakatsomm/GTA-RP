@@ -21,11 +21,20 @@ const connectedClients = new Set<WebSocket>();
 export async function wsRoute(app: FastifyInstance, opts: WsPluginOptions): Promise<void> {
   const { eventBus } = opts;
 
+  // Fail fast at registration if the auth secret is missing — otherwise every
+  // FiveM connection would be silently rejected with no startup signal.
+  const expectedToken = process.env['FIVEM_INGEST_TOKEN'];
+  if (!expectedToken) {
+    throw new Error(
+      'FIVEM_INGEST_TOKEN is not set — /ws/fivem cannot authenticate any clients. Set the env var or do not register wsRoute.',
+    );
+  }
+
   app.get('/ws/fivem', { websocket: true }, (socket, req) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader?.replace(/^Bearer\s+/i, '');
 
-    if (!token || token !== process.env['FIVEM_INGEST_TOKEN']) {
+    if (!token || token !== expectedToken) {
       socket.send(JSON.stringify({ error: 'Unauthorized' }));
       socket.close(1008, 'Unauthorized');
       return;

@@ -6,7 +6,11 @@
 -- luacheck: globals RegisterNetEvent AddEventHandler RegisterCommand SendNUIMessage PlaySoundFrontend NetworkRequestControlOfNetworkId NetworkGetNetworkIdFromEntity
 -- luacheck: globals exports lib TriggerServerEvent source LocalPlayer PlayerPedId GetPlayerPed
 
-local isMuted = false
+local isMuted        = false
+-- Generation counter — incremented on every new incident. Pending auto-hide
+-- timers compare against this and become no-ops if a newer incident has
+-- arrived, so an old timeout cannot hide the current card.
+local incidentGen    = 0
 
 -- Show or hide the NUI frame
 local function setNuiVisible(visible)
@@ -43,9 +47,15 @@ RegisterNetEvent('ai_dispatch:showIncident', function(data)
 
   setNuiVisible(true)
 
-  -- Auto-hide after 12 seconds
+  -- Auto-hide after 12 seconds. Bump the generation counter and capture it so
+  -- a still-pending timer from a previous incident becomes a no-op when a
+  -- newer card arrives within the window.
+  incidentGen = incidentGen + 1
+  local myGen = incidentGen
   SetTimeout(12000, function()
-    setNuiVisible(false)
+    if myGen == incidentGen then
+      setNuiVisible(false)
+    end
   end)
 
   -- Play police radio tone (FiveM built-in sound)
