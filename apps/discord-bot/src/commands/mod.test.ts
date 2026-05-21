@@ -48,6 +48,7 @@ function makeInteraction(
   const sendMock = vi.fn().mockResolvedValue(undefined);
   const channelFetchMock = vi.fn().mockResolvedValue({
     isTextBased: () => true,
+    isDMBased: () => false,
     send: sendMock,
   });
 
