@@ -6,7 +6,7 @@ QBox-based FiveM server data. Boots via `pnpm fivem:dev` from the repo root.
 
 - Docker Desktop running.
 - A valid FiveM licence key (https://keymaster.fivem.net).
-- `.env` file in this directory (copy `.env.example` and fill values).
+- `.env` file in this directory with the variables listed in the **Environment variables** section below.
 
 ## First-time setup
 
@@ -30,6 +30,7 @@ The txAdmin UI is at http://localhost:40120. First run prompts for a PIN.
   robbery/       — Holdup at convenience store till → crime.committed event
 [ai]/
   ai_dispatch/   — Dispatch NUI card + voice audio for police job
+  ai_witness/    — NPC witness sampling → witness.observed events
 ```
 
 ## Pinned dependency versions
@@ -40,7 +41,7 @@ The txAdmin UI is at http://localhost:40120. First run prompts for a PIN.
 | ox_inventory | 2.35.1  | https://github.com/overextended/ox_inventory |
 | qbx_core     | 1.37.0  | https://github.com/Qbox-project/qbx_core     |
 
-To update: change version tags in `server.cfg.template` and re-run `pnpm fivem:update`.
+To update: change the version tags in `server.cfg.template` and re-run `pnpm fivem:dev` to recreate the container with the new pins.
 
 ## Environment variables
 

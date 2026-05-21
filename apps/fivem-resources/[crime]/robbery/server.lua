@@ -116,6 +116,12 @@ local function publishCrimeEvent(playerId, data)
       if statusCode == 201 or statusCode == 200 then
         print(('[robbery] published crime.committed crimeId=%s player=%s'):format(crimeId, perpetratorId))
         TriggerClientEvent('robbery:startHoldup', playerId)
+        -- Notify ai_witness to scan for NPC witnesses on all clients. Pass
+        -- crime coords so each client samples NPCs around the actual scene
+        -- (not around their own player ped, which could be far away).
+        TriggerEvent('ai_witness:crimePublished', crimeId, {
+          x = data.x, y = data.y, z = data.z,
+        })
       else
         print(('[robbery] /events returned %d for player %s'):format(statusCode, perpetratorId))
       end

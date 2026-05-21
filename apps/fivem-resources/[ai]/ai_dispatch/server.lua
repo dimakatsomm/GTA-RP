@@ -10,6 +10,11 @@
 local BACKEND_URL   = GetConvar('BACKEND_URL', 'http://localhost:3001')
 local INGEST_TOKEN  = GetConvar('FIVEM_INGEST_TOKEN', '')
 
+-- Gate for solo/local testing: when true, broadcast to ALL players when no
+-- police are on duty. Must be explicitly opted in via server.cfg to prevent
+-- leaking police-only incident data in production.
+local ALLOW_GLOBAL_FALLBACK = GetConvar('AI_DISPATCH_ALLOW_GLOBAL_FALLBACK', 'false') == 'true'
+
 -- Convert http/https base URL to ws/wss
 local function toWsUrl(url)
   return (url:gsub('^http', 'ws')) .. '/ws/fivem'
@@ -75,12 +80,16 @@ local function broadcastDispatch(payload)
     TriggerClientEvent('ai_dispatch:showIncident', playerId, payload)
   end
 
-  -- Also broadcast to all players if no police on duty (solo testing)
+  -- Optional fallback for solo/local testing only.
+  -- Requires AI_DISPATCH_ALLOW_GLOBAL_FALLBACK=true in server.cfg.
   local hasPolice = next(policeOnDuty) ~= nil
-  if not hasPolice then
+  if not hasPolice and ALLOW_GLOBAL_FALLBACK then
+    print('[ai_dispatch] no police on duty — broadcasting to all players (global fallback enabled)')
     for _, playerId in ipairs(GetPlayers()) do
       TriggerClientEvent('ai_dispatch:showIncident', tonumber(playerId), payload)
     end
+  elseif not hasPolice then
+    print('[ai_dispatch] no police on duty — incident delivery skipped (set AI_DISPATCH_ALLOW_GLOBAL_FALLBACK=true for solo testing)')
   end
 end
 
