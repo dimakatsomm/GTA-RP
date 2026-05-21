@@ -5,7 +5,7 @@ NPC witness detection and statement capture for the AI-powered dispatch pipeline
 ## What it does
 
 - Listens for `ai_witness:crimePublished` (fired by `[crime]/robbery` and `[crime]/hijack` after a `crime.committed` event is published)
-- Client-side: samples up to 8 nearby NPC peds within 40 m, estimates each witness's reliability from lighting, distance, fear, and intoxication factors
+- Client-side: samples up to 3 nearby NPC peds within 25 m of the crime scene (coords forwarded by the server), estimates each witness's reliability from lighting, distance, fear, and intoxication factors
 - Server-side: caps 3 witnesses per crime, calls backend `/events` to publish a `witness.observed` NATS event per witness
 - Displays a brief NUI toast on all connected clients when a witness is detected
 - The event-worker `witness` engine picks up `witness.observed`, generates an SA-authentic Tier 0 statement via template, and publishes `witness.statement`

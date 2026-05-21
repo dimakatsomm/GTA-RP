@@ -16,10 +16,10 @@ body.hidden { display: none; }
   gap: 10px;
   color: #e2e8f0;
   font-size: .75rem;
-  animation: fadeIn .3s ease;
+  animation: fade-in .3s ease;
 }
 
-@keyframes fadeIn {
+@keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }

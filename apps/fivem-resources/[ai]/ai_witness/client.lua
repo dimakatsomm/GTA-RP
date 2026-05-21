@@ -7,7 +7,7 @@
 -- luacheck: globals GetPedNearbyPeds PlayerPedId GetEntityCoords GetGameplayCamCoords
 -- luacheck: globals GetEntityHeading IsPedInAnyVehicle IsPedDeadOrDying
 -- luacheck: globals GetNightVision IsHelpMessageBeingDisplayed NetworkGetNetworkIdFromEntity
--- luacheck: globals NetworkIsEntityNetworkIdValid Citizen Wait math
+-- luacheck: globals NetworkIsEntityNetworkIdValid Citizen Wait math vector3
 
 local MAX_WITNESSES  = 3     -- cap to avoid spam
 local DETECT_RADIUS  = 25.0  -- metres — NPCs within this range may witness
@@ -25,22 +25,24 @@ local function estimateLighting()
   end
 end
 
---- Sample nearby peds (NPCs only) within radius.
-local function sampleNearbyNpcs(playerPed, radius)
-  local playerPos = GetEntityCoords(playerPed)
-  local results   = {}
+--- Sample nearby peds (NPCs only) within radius around an anchor position.
+local function sampleNearbyNpcs(playerPed, anchorPos, radius)
+  local results = {}
 
-  -- GetPedNearbyPeds returns up to 30 nearby peds
+  -- GetPedNearbyPeds returns up to 30 nearby peds (1-indexed Lua array)
   local nearby = GetPedNearbyPeds(playerPed, 30, 0)
   if not nearby then return results end
 
-  for i = 0, #nearby - 1 do
+  for i = 1, #nearby do
     local ped = nearby[i]
     if ped and ped ~= 0 and not IsPedDeadOrDying(ped, true) and not IsPedInAnyVehicle(ped, false) then
       local pedPos = GetEntityCoords(ped)
-      local dist   = #(playerPos - pedPos)
+      local dist   = #(anchorPos - pedPos)
       if dist <= radius then
-        table.insert(results, { ped = ped, dist = dist })
+        local netId = NetworkGetNetworkIdFromEntity(ped)
+        if netId and netId ~= 0 then
+          table.insert(results, { ped = ped, netId = netId, dist = dist })
+        end
       end
     end
     if #results >= MAX_WITNESSES then break end
@@ -61,11 +63,27 @@ local function buildFactors(witnessData, lighting)
   }
 end
 
---- Called when a crime.committed event is confirmed by server
-RegisterNetEvent('ai_witness:crimeOccurred', function(crimeId)
+--- Called when a crime.committed event is confirmed by server.
+--- Payload: { crimeId, x, y, z } — server passes the crime location so every
+--- client samples NPCs around the actual scene rather than around their own
+--- player ped (which would pick up unrelated NPCs near far-away players).
+RegisterNetEvent('ai_witness:crimeOccurred', function(payload)
+  if type(payload) ~= 'table' or type(payload.crimeId) ~= 'string' then return end
+
   local playerPed = PlayerPedId()
+  local crimeId   = payload.crimeId
+  -- Fall back to the player ped's own position only if the server omitted
+  -- coordinates (older payload shape) — better than silently doing nothing.
+  local anchorPos = (payload.x and payload.y and payload.z)
+    and vector3(payload.x, payload.y, payload.z)
+    or GetEntityCoords(playerPed)
+
+  -- Skip witness sampling if the local player is too far from the scene —
+  -- prevents distant players from contributing fake witnesses.
+  if #(GetEntityCoords(playerPed) - anchorPos) > (DETECT_RADIUS * 2) then return end
+
   local lighting  = estimateLighting()
-  local witnesses = sampleNearbyNpcs(playerPed, DETECT_RADIUS)
+  local witnesses = sampleNearbyNpcs(playerPed, anchorPos, DETECT_RADIUS)
 
   for _, w in ipairs(witnesses) do
     local factors = buildFactors(w, lighting)
@@ -77,9 +95,10 @@ RegisterNetEvent('ai_witness:crimeOccurred', function(crimeId)
     )
 
     TriggerServerEvent('ai_witness:reportWitness', {
-      crimeId    = crimeId,
-      quality    = quality,
-      factors    = factors,
+      crimeId   = crimeId,
+      netId     = w.netId,  -- stable per-NPC handle for deterministic witnessId
+      quality   = quality,
+      factors   = factors,
     })
   end
 end)

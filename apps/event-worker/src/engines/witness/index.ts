@@ -111,32 +111,53 @@ async function handleWitnessObserved(evt: WitnessObserved): Promise<void> {
     return;
   }
 
-  const result = buildWitnessStatement(witnessId, crimeId, quality, factors);
-  if (!result) {
+  try {
+    const result = buildWitnessStatement(witnessId, crimeId, quality, factors);
+    if (!result) {
+      console.log(
+        `[witness] witnessId=${witnessId} refused to give statement (quality=${quality.toFixed(2)})`,
+      );
+      return;
+    }
+
+    // Unwilling witnesses don't produce a public statement — downstream
+    // consumers (investigation, court) only act on testimony the witness will
+    // actually give. Emitting a `willing: false` event leaked noise into the
+    // statement stream and inflated reliability metrics.
+    if (!result.willing) {
+      console.log(
+        `[witness] witnessId=${witnessId} unwilling to testify (quality=${quality.toFixed(2)}) — not publishing`,
+      );
+      return;
+    }
+
+    await bus.publish({
+      id: randomUUID(),
+      type: 'witness.statement',
+      version: 1,
+      occurredAt: new Date().toISOString(),
+      correlationId: evt.id,
+      data: {
+        crimeId,
+        witnessId,
+        statement: result.statement,
+        reliability: result.reliability,
+        willing: result.willing,
+      },
+    });
+
     console.log(
-      `[witness] witnessId=${witnessId} refused to give statement (quality=${quality.toFixed(2)})`,
+      `[witness] published witness.statement crimeId=${crimeId} witnessId=${witnessId} reliability=${result.reliability.toFixed(2)}`,
     );
-    return;
+  } catch (err) {
+    // Release the idempotency claim so a retry/redelivery can attempt the
+    // statement again. Without this, a transient publish/template failure
+    // would block this (crime, witness) pair for the full 4h TTL.
+    await redis.del(claimKey).catch((delErr) => {
+      console.warn(`[witness] failed to release claim ${claimKey} after error`, delErr);
+    });
+    throw err;
   }
-
-  await bus.publish({
-    id: randomUUID(),
-    type: 'witness.statement',
-    version: 1,
-    occurredAt: new Date().toISOString(),
-    correlationId: evt.id,
-    data: {
-      crimeId,
-      witnessId,
-      statement: result.statement,
-      reliability: result.reliability,
-      willing: result.willing,
-    },
-  });
-
-  console.log(
-    `[witness] published witness.statement crimeId=${crimeId} witnessId=${witnessId} reliability=${result.reliability.toFixed(2)}`,
-  );
 }
 
 export { handleWitnessObserved };
