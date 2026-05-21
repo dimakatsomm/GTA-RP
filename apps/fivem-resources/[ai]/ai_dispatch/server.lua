@@ -53,8 +53,10 @@ local function broadcastDispatch(payload)
   end
 end
 
--- WebSocket connection to backend
-local wsId = nil
+-- WebSocket connection to backend.
+-- `currentWsId` is kept (not just logged) so future code can `WebsocketClose(currentWsId)`
+-- on graceful shutdown without restructuring this module.
+local currentWsId = nil  -- luacheck: ignore
 local reconnectDelay = 2000
 
 local function connectWs()
@@ -65,7 +67,7 @@ local function connectWs()
       ['Authorization'] = 'Bearer ' .. INGEST_TOKEN,
     },
     function(id)  -- onOpen
-      wsId = id
+      currentWsId = id
       reconnectDelay = 2000
       print(('[ai_dispatch] WS connected id=%d'):format(id))
     end,
@@ -77,7 +79,7 @@ local function connectWs()
       end
     end,
     function(id, code, reason)  -- onClose
-      wsId = nil
+      currentWsId = nil
       print(('[ai_dispatch] WS closed id=%d code=%d reason=%s — reconnecting in %dms'):format(
         id, code, reason or '', reconnectDelay))
       -- Exponential back-off (max 30 s)

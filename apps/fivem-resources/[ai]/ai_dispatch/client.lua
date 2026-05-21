@@ -6,12 +6,10 @@
 -- luacheck: globals RegisterNetEvent AddEventHandler RegisterCommand SendNUIMessage PlaySoundFrontend NetworkRequestControlOfNetworkId NetworkGetNetworkIdFromEntity
 -- luacheck: globals exports lib TriggerServerEvent source LocalPlayer PlayerPedId GetPlayerPed
 
-local nuiVisible = false
-local isMuted    = false
+local isMuted = false
 
 -- Show or hide the NUI frame
 local function setNuiVisible(visible)
-  nuiVisible = visible
   SendNUIMessage({ action = 'setVisible', visible = visible })
 end
 
