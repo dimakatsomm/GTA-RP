@@ -8,6 +8,7 @@ import type { Redis } from 'ioredis';
 import { healthzRoute } from './routes/healthz.js';
 import { eventsRoute } from './routes/events.js';
 import { wsRoute } from './routes/ws.js';
+import { policeRoute } from './routes/police.js';
 
 export interface BuildServerOptions {
   prisma?: PrismaClient;
@@ -29,6 +30,9 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   }
   if (opts.prisma && opts.eventBus) {
     await app.register(eventsRoute, { prisma: opts.prisma, eventBus: opts.eventBus });
+  }
+  if (opts.prisma) {
+    await app.register(policeRoute, { prisma: opts.prisma });
   }
   if (opts.eventBus) {
     await app.register(websocket);

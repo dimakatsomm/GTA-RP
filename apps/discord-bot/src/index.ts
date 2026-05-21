@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { pingHandler } from './commands/ping.js';
+import { queueHandler } from './commands/queue.js';
+import { modHandler } from './commands/mod.js';
 import { startDispatchFeed } from './dispatch-feed.js';
 
 const token = process.env['DISCORD_BOT_TOKEN'];
@@ -40,6 +42,14 @@ client.on('interactionCreate', (interaction) => {
   if (interaction.commandName === 'ping') {
     pingHandler(interaction).catch((err: unknown) => {
       console.error('[discord-bot] ping handler error:', err);
+    });
+  } else if (interaction.commandName === 'queue') {
+    queueHandler(interaction).catch((err: unknown) => {
+      console.error('[discord-bot] queue handler error:', err);
+    });
+  } else if (interaction.commandName === 'mod') {
+    modHandler(interaction).catch((err: unknown) => {
+      console.error('[discord-bot] mod handler error:', err);
     });
   }
 });
