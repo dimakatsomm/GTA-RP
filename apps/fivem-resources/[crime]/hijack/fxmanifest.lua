@@ -18,5 +18,9 @@ server_scripts {
   'server.lua',
 }
 
-dependency '/assetpacks'
+dependencies {
+  '/assetpacks',
+  'ox_lib',
+}
+
 lua54 'yes'

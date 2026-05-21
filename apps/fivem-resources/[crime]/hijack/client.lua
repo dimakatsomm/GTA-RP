@@ -11,7 +11,7 @@
 local inRangeVehicle = nil  -- nearest eligible vehicle entity handle
 local DETECT_RANGE   = 5.0  -- metres
 
--- Poll every 500 ms for a nearby hiiackable vehicle
+-- Poll every 500 ms for a nearby hijackable vehicle
 Citizen.CreateThread(function()
   while true do
     Wait(500)
@@ -20,7 +20,7 @@ Citizen.CreateThread(function()
     -- Don't offer hijack when already driving
     if IsPedInAnyVehicle(ped, false) then
       if inRangeVehicle then
-        lib.hideContext()
+        lib.hideTextUI()
         inRangeVehicle = nil
       end
       goto continue
