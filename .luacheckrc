@@ -103,6 +103,7 @@ read_globals = {
 
   -- Misc runtime
   "json",
+  "GetClockHours",
   "vector3",
   "vector2",
   "vector4",
