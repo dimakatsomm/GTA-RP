@@ -7,6 +7,7 @@ import { registry } from './metrics.js';
 import { registerReputationEngine } from './engines/reputation/index.js';
 import { registerDispatchEngine, initDispatchEngine } from './engines/dispatch/index.js';
 import { registerWitnessEngine, initWitnessEngine } from './engines/witness/index.js';
+import { registerNewsEngine, initNewsEngine } from './engines/news/index.js';
 
 function parsePort(raw: string | undefined, fallback: number, name: string): number {
   if (raw === undefined || raw === '') return fallback;
@@ -40,6 +41,7 @@ async function main() {
   // handlers on their first job.
   registerReputationEngine();
   registerWitnessEngine();
+  registerNewsEngine();
 
   // ── Redis ─────────────────────────────────────────────────────────────────
   // JetStream stream lifecycle (create + config) is owned by @gtarp/event-bus
@@ -57,6 +59,7 @@ async function main() {
   // consumer first and finish init with the bus once the bridge is up.
   const AI_ORCHESTRATOR_URL = process.env['AI_ORCHESTRATOR_URL'] ?? 'http://localhost:3002';
   registerDispatchEngine();
+  initNewsEngine({ redis });
 
   // ── BullMQ bridge ─────────────────────────────────────────────────────────
   const bridge = await startBridge({ natsUrl: NATS_URL, redisUrl: REDIS_URL });
