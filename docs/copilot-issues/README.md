@@ -2,6 +2,8 @@
 
 Each `m<N>-*.md` is a ready-to-paste GitHub issue body for a Copilot agent. One file = one PR.
 
+Use `EXECUTION-QUEUE.md` as the operating plan for sequencing milestones and splitting work across multiple agents/PRs.
+
 ## Conventions
 
 - Title format: `[M<N>] <verb-led summary>`
