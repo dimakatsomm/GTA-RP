@@ -55,7 +55,6 @@ describe('createBudgetMiddleware', () => {
     });
 
     const body = res.json<{ effectiveTier: number; degraded: boolean }>();
-    // Hard-fallback to tier 0 on budget exceed — stepping 2→1 still spends paid tokens.
     expect(body.effectiveTier).toBe(0);
     expect(body.degraded).toBe(true);
     await app.close();

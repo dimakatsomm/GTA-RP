@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TextRequestSchema, VoiceRequestSchema } from './generate.js';
 
-// Contract tests — verify Zod schemas accept/reject correct shapes.
-// These run without starting the HTTP server.
-
 describe('TextRequestSchema', () => {
   it('accepts a valid tier-1 text request', () => {
     const result = TextRequestSchema.safeParse({

@@ -1,7 +1,3 @@
-/**
- * Parse a port number from an env var with strict validation.
- * Falls back to `fallback` when unset; exits the process on invalid input.
- */
 export function parsePort(raw: string | undefined, fallback: number, name: string): number {
   if (raw === undefined || raw === '') return fallback;
   const n = Number.parseInt(raw, 10);

@@ -45,7 +45,5 @@ export class NoopL2Cache implements L2Cache {
     return null;
   }
 
-  async store(_userPrompt: string, _entry: CacheEntry): Promise<void> {
-    // no-op: semantic cache unavailable
-  }
+  async store(_userPrompt: string, _entry: CacheEntry): Promise<void> {}
 }

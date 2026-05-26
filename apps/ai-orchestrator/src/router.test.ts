@@ -68,7 +68,6 @@ describe('routeText', () => {
     const deps = makeDeps([0, 1, 2, 3], makeBudgetChecker({ serverOk: false, playerOk: true }));
     const result = await routeText(baseReq, undefined, deps);
     expect(result.requestedTier).toBe(2);
-    // Stepping 2→1 would still spend paid tokens; only tier 0 (templates) is free.
     expect(result.usedTier).toBe(0);
     expect(result.degraded).toBe(true);
   });
@@ -108,12 +107,11 @@ describe('routeText', () => {
     expect(logged).toMatchObject({ purpose: 'dispatch' });
   });
 
-  it('falls back to tier 0 provider when requested tier provider missing', async () => {
-    // Only tier 0 and tier 1 providers — request tier 3
+  it('throws when requested tier provider is missing', async () => {
     const deps = makeDeps([0, 1], makeBudgetChecker());
     const req: GenerationRequest = { ...baseReq, tier: 3 };
-    const result = await routeText(req, undefined, deps);
-    // Server budget ok, so effective tier is 3, but provider missing → falls back to tier 0
-    expect(result.tier).toBe(0);
+    await expect(routeText(req, undefined, deps)).rejects.toThrow(
+      'No text provider configured for tier 3',
+    );
   });
 });

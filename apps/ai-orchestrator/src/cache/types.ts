@@ -2,7 +2,7 @@ import type { GenerationResult } from '@gtarp/ai-clients';
 
 export interface CacheEntry {
   result: GenerationResult;
-  storedAt: number; // Date.now()
+  storedAt: number;
 }
 
 export interface L1Cache {
@@ -11,11 +11,6 @@ export interface L1Cache {
 }
 
 export interface L2Cache {
-  /**
-   * Find a semantically similar cached entry. If `threshold` is omitted the
-   * implementation uses its configured default (e.g. SemanticL2Cache's
-   * deps.threshold).
-   */
   find(userPrompt: string, threshold?: number): Promise<CacheEntry | null>;
   store(userPrompt: string, entry: CacheEntry): Promise<void>;
 }

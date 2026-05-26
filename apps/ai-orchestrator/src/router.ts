@@ -19,7 +19,6 @@ export interface VoiceRouterResult extends VoiceResult {
 }
 
 export interface BudgetChecker {
-  /** Returns true if within budget. */
   checkPlayer(playerId: string, tokens: number): Promise<boolean>;
   checkServer(tokens: number): Promise<boolean>;
   recordUsage(playerId: string | undefined, tokens: number): Promise<void>;
@@ -60,10 +59,6 @@ export async function routeText(
   let effectiveTier = requestedTier;
   let degraded = false;
 
-  // Budget exceeded → hard-fallback to tier 0 (templates). Stepping 3→2 or
-  // 2→1 still spends paid tokens, so it would not actually enforce the
-  // budget ceiling. BudgetChecker is token-only (no tier-cost map), so the
-  // only safe degradation is the free tier.
   if (effectiveTier > 0) {
     const serverOk = await deps.budgetChecker.checkServer(estimatedTokens);
     if (!serverOk) {
@@ -72,7 +67,6 @@ export async function routeText(
     }
   }
 
-  // Check player budget — same hard-fallback.
   if (playerId !== undefined && effectiveTier > 0) {
     const playerOk = await deps.budgetChecker.checkPlayer(playerId, estimatedTokens);
     if (!playerOk) {
@@ -81,10 +75,9 @@ export async function routeText(
     }
   }
 
-  // Fall back to tier 0 if requested tier's provider is missing
-  const provider = deps.textProviders.get(effectiveTier) ?? deps.textProviders.get(0);
+  const provider = deps.textProviders.get(effectiveTier);
   if (provider === undefined) {
-    throw new Error(`No text provider available (tried tier ${effectiveTier} and tier 0)`);
+    throw new Error(`No text provider configured for tier ${effectiveTier}`);
   }
 
   const modifiedReq: GenerationRequest = { ...req, tier: effectiveTier };
@@ -115,12 +108,6 @@ export async function routeText(
   };
 }
 
-/**
- * Thrown when a voice request would exceed server or player budget. Voice has
- * no tier-0 free fallback (TTS is inherently paid), so the only safe path is
- * to refuse the call. Per ADR-0004 this is an enforcing budget guard, not an
- * advisory flag.
- */
 export class VoiceBudgetExceededError extends Error {
   constructor(public readonly scope: 'server' | 'player') {
     super(`Voice budget exceeded (${scope}); request denied`);
@@ -136,8 +123,6 @@ export async function routeVoice(
 ): Promise<VoiceRouterResult> {
   const estimatedTokens = 1024;
 
-  // Enforcing guard — refuse paid TTS when over budget. There is no free
-  // voice fallback, so degraded=true cannot mean "proceed anyway".
   const serverOk = await deps.budgetChecker.checkServer(estimatedTokens);
   if (!serverOk) throw new VoiceBudgetExceededError('server');
 
@@ -169,9 +154,6 @@ export async function routeVoice(
   }
   await deps.usageLogger.log(usageEntry);
 
-  // Record an audio-second proxy so voice spend contributes to player budget.
-  // Using durationSeconds * 50 ≈ tokens-equivalent (rough cost normalisation
-  // matching ElevenLabs ~$0.03/min vs $0.001/1k tokens for Haiku).
   const audioTokenEquivalent = Math.ceil(result.durationSeconds * 50);
   await deps.budgetChecker.recordUsage(playerId, audioTokenEquivalent);
 

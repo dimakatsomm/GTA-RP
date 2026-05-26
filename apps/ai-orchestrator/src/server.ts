@@ -13,8 +13,6 @@ const STUB_ADMIN_DEPS: AdminDeps = {
 };
 
 export interface BuildServerOptions {
-  // Required in production (wire real DB-backed implementation in index.ts).
-  // Omitting falls back to empty/zero stubs — tests and local dev only.
   adminDeps?: AdminDeps;
 }
 

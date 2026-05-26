@@ -1,12 +1,6 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 
-/**
- * Request schema for POST /generate/text.
- *
- * Mirrors @gtarp/ai-clients GenerationRequest so the orchestrator
- * can validate before delegating (M2+). Tier 0 = template, 3 = Opus-class.
- */
 export const TextRequestSchema = z.object({
   purpose: z.string().min(1, 'purpose required'),
   tier: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]),
@@ -17,11 +11,6 @@ export const TextRequestSchema = z.object({
   cacheKey: z.string().optional(),
 });
 
-/**
- * Request schema for POST /generate/voice.
- *
- * Mirrors @gtarp/ai-clients VoiceRequest.
- */
 export const VoiceRequestSchema = z.object({
   voiceId: z.string().min(1, 'voiceId required'),
   text: z.string().min(1, 'text required'),
