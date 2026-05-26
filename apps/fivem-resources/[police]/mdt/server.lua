@@ -232,15 +232,15 @@ RegisterNetEvent('mdt:makeArrest', function(data)
 
   local area, province = deriveArea(coords.x, coords.y)
 
-  local eventId   = uuid4()
-  local now       = os.date('!%Y-%m-%dT%H:%M:%SZ')
+  local eventId    = uuid4()
+  local occurredAt = os.date('!%Y-%m-%dT%H:%M:%SZ')
   local incidentId = safeString(tostring(data.incidentId or ''), 64)
 
   local payload = {
     id         = eventId,
     type       = 'arrest.made',
     version    = 1,
-    occurredAt = now,
+    occurredAt = occurredAt,
     actor      = tostring(officerId),
     data       = {
       suspectId  = suspectId,
