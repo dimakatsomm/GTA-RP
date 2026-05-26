@@ -64,6 +64,7 @@ export const ArrestMade = EventEnvelope.extend({
     suspectId: z.string(),
     officerId: z.string(),
     charges: z.array(CrimeType).min(1),
+    incidentId: z.string().optional(),
     location: Geo,
   }),
 });

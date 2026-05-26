@@ -177,8 +177,9 @@ async function ensureChannel(
 
 async function main() {
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+  const ready = new Promise<void>((resolve) => client.once('ready', () => resolve()));
   await client.login(token);
-  await new Promise<void>((resolve) => client.once('ready', () => resolve()));
+  await ready;
 
   const guild = await client.guilds.fetch(guildId as string);
   await guild.roles.fetch();

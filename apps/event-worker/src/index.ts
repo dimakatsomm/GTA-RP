@@ -59,6 +59,7 @@ async function main() {
   // consumer first and finish init with the bus once the bridge is up.
   const AI_ORCHESTRATOR_URL = process.env['AI_ORCHESTRATOR_URL'] ?? 'http://localhost:3002';
   registerDispatchEngine();
+  initNewsEngine({ redis });
 
   // ── BullMQ bridge ─────────────────────────────────────────────────────────
   const bridge = await startBridge({ natsUrl: NATS_URL, redisUrl: REDIS_URL });
@@ -66,7 +67,6 @@ async function main() {
 
   initDispatchEngine({ redis, orchestratorUrl: AI_ORCHESTRATOR_URL, bus: bridge.bus });
   initWitnessEngine({ redis, bus: bridge.bus });
-  initNewsEngine({ redis });
 
   // ── Heartbeat ─────────────────────────────────────────────────────────────
   const heartbeat = setInterval(() => {

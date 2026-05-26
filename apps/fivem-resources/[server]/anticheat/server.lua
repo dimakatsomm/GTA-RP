@@ -5,8 +5,8 @@
 -- luacheck: globals RegisterNetEvent AddEventHandler DropPlayer GetPlayerName
 -- luacheck: globals GetGameTimer source print json math type Citizen
 
-local TELEPORT_THRESHOLD = 500.0   -- metres between consecutive 2s reports → kick
-local MAX_HEALTH         = 201     -- FiveM health ceiling is 200; anything above is godmode
+local TELEPORT_THRESHOLD = 150.0   -- metres between consecutive 2s reports → kick
+local MAX_HEALTH         = 200     -- FiveM health ceiling is 200; anything above is godmode
 local REPORT_TIMEOUT_MS  = 10000   -- ms without a report before we consider the client dead
 
 local playerData = {}

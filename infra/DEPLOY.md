@@ -79,7 +79,9 @@ pnpm install --frozen-lockfile
 
 # Deploy Prisma migrations against the production DB
 # (DATABASE_URL must be set in your shell or sourced from .env.production)
-export $(grep -v '^#' infra/docker/.env.production | xargs)
+set -a
+. infra/docker/.env.production
+set +a
 
 pnpm --filter @gtarp/db prisma:deploy
 ```
@@ -168,7 +170,7 @@ curl -sf http://127.0.0.1:3003/healthz && echo "event-worker OK"
 
 **Prometheus scrape targets:**
 
-```
+```text
 http://127.0.0.1:9090/targets
 ```
 

@@ -178,6 +178,9 @@ function renderDetail(id) {
     fetch('https://mdt/makeArrest', {
       method: 'POST',
       body: JSON.stringify({ suspectServerId: suspectId, charges, incidentId: inc.incidentId }),
+    }).catch(() => {
+      statusEl.textContent = 'Failed to submit arrest. Please retry.';
+      statusEl.className = 'arrest-status error';
     });
   });
 

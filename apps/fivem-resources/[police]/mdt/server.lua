@@ -5,7 +5,7 @@
 -- luacheck: globals exports TriggerClientEvent RegisterNetEvent AddEventHandler
 -- luacheck: globals source GetPlayers json math table string os QBX GetConvar
 -- luacheck: globals GetCurrentResourceName GetResourceKvpString SetResourceKvp
--- luacheck: globals GetPlayerPed GetEntityCoords PerformHttpRequest GetGameTimer
+-- luacheck: globals GetPlayerPed GetEntityCoords PerformHttpRequest GetGameTimer GetPlayerName
 
 local BACKEND_URL  = GetConvar('BACKEND_URL', 'http://localhost:3001')
 local INGEST_TOKEN = GetConvar('FIVEM_INGEST_TOKEN', '')
@@ -180,8 +180,13 @@ RegisterNetEvent('mdt:makeArrest', function(data)
   end
 
   local suspectId = tostring(data.suspectServerId or '')
-  if not suspectId:match('^%d+$') then
+  local suspectNum = tonumber(suspectId)
+  if not suspectNum or suspectNum < 1 or suspectNum > 255 then
     TriggerClientEvent('mdt:arrestLogged', officerId, false, 'Invalid suspect ID.')
+    return
+  end
+  if not GetPlayerName(suspectNum) then
+    TriggerClientEvent('mdt:arrestLogged', officerId, false, 'Suspect is not online.')
     return
   end
   if suspectId == tostring(officerId) then
