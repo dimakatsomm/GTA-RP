@@ -36,8 +36,8 @@ services:
     restart: unless-stopped
     command: ['-js', '-sd', '/data']
     ports:
-      - '4222:4222'
-      - '8222:8222'
+      - '127.0.0.1:4222:4222'
+      - '127.0.0.1:8222:8222'
     volumes:
       - nats_data:/data
 
